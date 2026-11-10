@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: thailand_journal
+      POSTGRES_USER: journal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Bitte POSTGRES_PASSWORD in .env setzen}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U journal -d thailand_journal"]
+      interval: 5s
+      retries: 15
+    restart: unless-stopped
+  api:
+    build: ./backend
+    command: ["sh", "-c", "python -c 'from app import initialize; initialize()' && uvicorn app:app --host 0.0.0.0 --port 8000"]
+    environment:
+      DATABASE_URL: postgresql://journal:${POSTGRES_PASSWORD}@db:5432/thailand_journal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      retries: 15
+    restart: unless-stopped
+  worker:
+    build: ./backend
+    command: ["python", "app.py"]
+    environment:
+      DATABASE_URL: postgresql://journal:${POSTGRES_PASSWORD}@db:5432/thailand_journal
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,db,api}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+volumes:
+  postgres_data:

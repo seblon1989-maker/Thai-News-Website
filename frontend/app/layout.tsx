@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Thailand Journal — Perspektiven aus Thailand',
-  description: 'Designvorschau eines unabhängigen Thailand-Nachrichtenportals mit fiktiven Beispieldaten.',
+  description: 'Nachrichten aus Thailand: Originalüberschriften aus offiziellen RSS-Feeds mit Quellenangabe und Link zum Originalartikel.',
   robots: { index: false, follow: false },
 };
 
